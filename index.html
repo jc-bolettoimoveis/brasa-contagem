@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contagem de Cultos · Brasa Church</title>
+<script src="chart.umd.js"></script>
+<script src="config.js"></script>
+<script src="fatores.js"></script>
+<style>
+:root{--bg:#0f1113;--panel:#181b1f;--panel2:#1f2329;--line:#2b3038;--txt:#f2efe9;--mut:#9aa1ab;
+--ember:#ff6a2b;--ember2:#ff9d4d;--gold:#ffcf5c;--centro:#4aa3ff;--red:#e3452f;
+--grad:linear-gradient(135deg,#ff6a2b,#ffcf5c);--sol:#ffcf5c;--nub:#8a94a3;--chuva:#4aa3ff;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.5;padding:0 0 60px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 20px}
+header{background:radial-gradient(120% 140% at 0% 0%,#2a1a10 0%,#0f1113 55%);border-bottom:1px solid var(--line);padding:34px 0 26px;margin-bottom:26px}
+.brandrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.flame{width:44px;height:44px;border-radius:12px;background:var(--grad);display:grid;place-items:center;font-size:24px;box-shadow:0 6px 22px rgba(255,106,43,.35)}
+h1{font-size:26px;font-weight:800;letter-spacing:-.5px}
+.sub{color:var(--mut);font-size:14px;margin-top:4px}
+.tag{display:inline-block;background:var(--panel2);border:1px solid var(--line);color:var(--ember2);font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;margin-top:10px}
+h2{font-size:18px;font-weight:700;margin:34px 0 4px;display:flex;align-items:center;gap:9px}
+h2 .b{width:8px;height:20px;background:var(--grad);border-radius:3px}
+.hint{color:var(--mut);font-size:13px;margin-bottom:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-top:20px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;position:relative;overflow:hidden}
+.kpi:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--grad)}
+.kpi .v{font-size:28px;font-weight:800;letter-spacing:-1px}
+.kpi .l{color:var(--mut);font-size:12.5px;margin-top:2px}
+.kpi .s{font-size:12px;color:var(--ember2);margin-top:6px;font-weight:600}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-top:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1.6fr 1fr;gap:16px}
+@media(max-width:860px){.grid2,.grid3{grid-template-columns:1fr}}
+canvas{max-width:100%}
+.chartbox{position:relative;height:340px}
+.chartbox.sm{height:280px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 4px}
+.btn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:20px;cursor:pointer}
+.btn.active{background:var(--grad);color:#1a0f07;border-color:transparent}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--mut);margin-top:10px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.heat{overflow-x:auto}
+table.ht{border-collapse:collapse;width:100%;font-size:12px;min-width:640px}
+table.ht th,table.ht td{padding:6px 4px;text-align:center;border:1px solid var(--bg)}
+table.ht th{color:var(--mut);font-weight:600}
+table.ht td.hlabel{color:var(--mut);text-align:right;padding-right:9px;white-space:nowrap;font-weight:600}
+.ftable{overflow-x:auto}
+table.f{border-collapse:collapse;width:100%;font-size:13px;min-width:820px}
+table.f th{background:var(--panel2);color:var(--mut);font-weight:600;text-align:left;padding:10px 12px;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+table.f td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:top}
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;margin:1px 2px 1px 0;white-space:nowrap}
+.bg-h{background:rgba(255,207,92,.15);color:var(--gold);border:1px solid rgba(255,207,92,.35)}
+.bg-w{background:rgba(227,69,47,.15);color:#ff8a72;border:1px solid rgba(227,69,47,.35)}
+.vpill{font-weight:700;font-size:12px;padding:2px 9px;border-radius:6px}
+.vt{background:rgba(255,106,43,.16);color:var(--ember2)}.vc{background:rgba(74,163,255,.16);color:#8cc4ff}
+.tnum{font-weight:800;font-size:15px}.wx{font-size:12px;line-height:1.35}
+.insights{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:6px}
+.ins{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--ember);border-radius:12px;padding:15px 17px}
+.ins h3{font-size:14.5px;margin-bottom:6px}.ins p{font-size:13px;color:#cfd4db}.ins .em{color:var(--ember2);font-weight:700}
+.foot{color:var(--mut);font-size:12px;margin-top:34px;border-top:1px solid var(--line);padding-top:16px}
+.callout{background:linear-gradient(135deg,rgba(74,163,255,.1),rgba(255,106,43,.08));border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-top:14px;font-size:14px}
+.callout b{color:var(--ember2)}
+#status{max-width:1240px;margin:16px auto;padding:14px 20px;border-radius:12px;background:var(--panel);border:1px solid var(--line);color:var(--mut);font-size:14px}
+#status.err{border-color:var(--red);color:#ff9a86}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--ember);border-radius:50%;animation:sp 0.8s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<header>
+ <div class="wrap">
+  <div class="brandrow"><div class="flame">🔥</div>
+   <div><h1>Contagem de Cultos · Brasa Church</h1>
+     <div class="sub">Porto Alegre — RS · atualizado automaticamente da planilha · clima por horário</div></div>
+  </div>
+  <span class="tag" id="tag">carregando…</span>
+ </div>
+</header>
+<div id="status"><span class="spin"></span>Carregando a planilha e o clima…</div>
+<div class="wrap" id="app" style="display:none">
+ <div class="kpis" id="kpis"></div>
+ <h2><span class="b"></span>Evolução do público por domingo</h2>
+ <div class="hint">Total do dia (todos os cultos). Cor do ponto = local. Passe o mouse para ver clima e fatores.</div>
+ <div class="card"><div class="controls" id="lineCtrl">
+   <button class="btn active" data-f="all">Todos</button><button class="btn" data-f="holiday">Feriadões</button>
+   <button class="btn" data-f="wc">Copa</button><button class="btn" data-f="centro">Centro de Eventos</button></div>
+   <div class="chartbox"><canvas id="lineChart"></canvas></div>
+   <div class="legend"><span><span class="dot" style="background:var(--ember)"></span>Teatro</span>
+   <span><span class="dot" style="background:var(--centro)"></span>Centro de Eventos</span>
+   <span><span class="dot" style="background:var(--gold)"></span>Feriadão</span>
+   <span><span class="dot" style="background:var(--red)"></span>Copa</span></div></div>
+ <h2><span class="b"></span>Clima × culto da manhã (9h)</h2>
+ <div class="hint">O culto das 9h é o mais sensível ao tempo.</div>
+ <div class="grid2"><div class="card"><div class="chartbox sm"><canvas id="wx9Chart"></canvas></div></div>
+   <div class="card"><div class="chartbox sm"><canvas id="scatterChart"></canvas></div></div></div>
+ <div class="callout" id="wxCallout"></div>
+ <h2><span class="b"></span>Sensibilidade ao clima por horário</h2>
+ <div class="card"><div class="chartbox"><canvas id="sensChart"></canvas></div>
+   <div class="legend"><span><span class="dot" style="background:var(--sol)"></span>Sol/Parcial</span>
+   <span><span class="dot" style="background:var(--nub)"></span>Nublado</span>
+   <span><span class="dot" style="background:var(--chuva)"></span>Chuva/Garoa</span></div></div>
+ <div class="grid2"><div><h2><span class="b"></span>Média por local</h2><div class="card"><div class="chartbox sm"><canvas id="venueChart"></canvas></div></div></div>
+   <div><h2><span class="b"></span>Média por horário</h2><div class="card"><div class="chartbox sm"><canvas id="hourChart"></canvas></div></div></div></div>
+ <div class="grid3"><div><h2><span class="b"></span>Composição por horário</h2><div class="card"><div class="chartbox"><canvas id="stackChart"></canvas></div></div></div>
+   <div><h2><span class="b"></span>Média mensal</h2><div class="card"><div class="chartbox"><canvas id="monthChart"></canvas></div></div></div></div>
+ <h2><span class="b"></span>Mapa de calor · domingo × horário</h2>
+ <div class="hint">Tons quentes = mais gente. Passe o mouse para ver o clima.</div>
+ <div class="card heat"><div id="heatmap"></div></div>
+ <h2><span class="b"></span>Tabela completa</h2>
+ <div class="card"><div class="controls">
+   <button class="btn active" data-t="all">Todos</button><button class="btn" data-t="holiday">Feriadão</button>
+   <button class="btn" data-t="wc">Copa</button><button class="btn" data-t="centro">Centro</button>
+   <button class="btn" data-t="rain">Manhã fria/chuva</button></div>
+   <div class="ftable"><table class="f"><thead><tr><th>Data</th><th>Local</th><th>Total</th><th>9h</th><th>Clima 9h</th><th>Feriado</th><th>Copa</th><th>Obs.</th></tr></thead><tbody id="fbody"></tbody></table></div></div>
+ <h2><span class="b"></span>Principais leituras</h2>
+ <div class="insights" id="insights"></div>
+ <div class="foot" id="foot"></div>
+</div>
+
+<script>
+const HOURS=['9','11','16','18','20'];
+const C={ember:'#ff6a2b',ember2:'#ff9d4d',gold:'#ffcf5c',centro:'#4aa3ff',red:'#e3452f',mut:'#9aa1ab',line:'#2b3038',sol:'#ffcf5c',nub:'#8a94a3',chuva:'#4aa3ff'};
+const ICON={Sol:'☀️',Parcial:'⛅',Nublado:'☁️',Garoa:'🌦️',Chuva:'🌧️'};
+const MES=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const fmt=n=>n==null?'':Math.round(n).toLocaleString('pt-BR');
+function cond(p,c){if(p>=0.4)return'Chuva';if(p>=0.1)return'Garoa';if(c<30)return'Sol';if(c<70)return'Parcial';return'Nublado';}
+function grp(x){return(x==='Chuva'||x==='Garoa')?'Chuva/Garoa':(x==='Nublado'?'Nublado':'Sol/Parcial');}
+
+function status(msg,err){const s=document.getElementById('status');s.className=err?'err':'';s.innerHTML=(err?'⚠️ ':'<span class=\"spin\"></span>')+msg;}
+
+/* ---------- CSV parse ---------- */
+function parseCSV(t){const rows=[];let i=0,f='',row=[],q=false;
+ while(i<t.length){const ch=t[i];
+  if(q){if(ch=='"'){if(t[i+1]=='"'){f+='"';i++;}else q=false;}else f+=ch;}
+  else{if(ch=='"')q=true;else if(ch==','){row.push(f);f='';}else if(ch=='\n'){row.push(f);rows.push(row);row=[];f='';}else if(ch=='\r'){}else f+=ch;}
+  i++;}
+ if(f.length||row.length){row.push(f);rows.push(row);}return rows;}
+function norm(s){return (s||'').toString().trim().toUpperCase().replace(/[^0-9A-Z]/g,'');}
+function parseDate(s){s=(s||'').toString().trim();
+ let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return m[1]+'-'+m[2]+'-'+m[3];
+ m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);if(m){let y=m[3];if(y.length==2)y='20'+y;return y+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');}
+ return null;}
+function num(v){if(v==null)return null;v=v.toString().replace(/\./g,'').replace(',','.').replace(/[^0-9.\-]/g,'');if(v==='')return null;const n=parseFloat(v);return isNaN(n)?null:n;}
+
+function buildFromCSV(text){
+ const rows=parseCSV(text).filter(r=>r.some(c=>c&&c.trim()));
+ // find header row containing DATA
+ let hi=rows.findIndex(r=>r.some(c=>norm(c)==='DATA'));
+ if(hi<0)hi=0;
+ const H=rows[hi].map(norm);
+ const col=name=>H.indexOf(name);
+ const idxDate=col('DATA');
+ const hmap={'9':['9H','09H','9HS','09HS'],'11':['11H','11HS'],'16':['16H','16HS'],'18':['18H','18HS'],'20':['20H','20HS']};
+ const hidx={};for(const h in hmap){for(const n of hmap[h]){const k=H.indexOf(n);if(k>=0){hidx[h]=k;break;}}}
+ const idxTot=col('TOTAL'); const idxObs=col('OBS');
+ const out=[];
+ for(let r=hi+1;r<rows.length;r++){
+   const row=rows[r]; const dt=parseDate(row[idxDate]);
+   if(!dt)continue; if(CONFIG.ANO && (+dt.slice(0,4))!==CONFIG.ANO)continue;
+   const services={}; let sum=0;
+   for(const h of HOURS){const k=hidx[h];const v=k!=null?num(row[k]):null;if(v&&v>0){services[h]=Math.round(v);sum+=v;}}
+   let total=idxTot>=0?num(row[idxTot]):null; if(!total||total<=0)total=sum;
+   if(!total||total<=0)continue;
+   out.push({date:dt,services,total:Math.round(total),obsSheet:idxObs>=0?(row[idxObs]||''):''});
+ }
+ out.sort((a,b)=>a.date<b.date?-1:1);
+ return out;
+}
+
+/* ---------- weather (Open-Meteo, 1 request for the whole range) ---------- */
+async function loadWeather(base){
+ if(!base.length)return {};
+ const minD=base[0].date, maxD=base[base.length-1].date;
+ const cacheKey='bcwx_'+CONFIG.LAT+'_'+minD+'_'+maxD;
+ let idx=null;
+ try{const c=localStorage.getItem(cacheKey);if(c)idx=JSON.parse(c);}catch(e){}
+ if(!idx){
+   const url='https://archive-api.open-meteo.com/v1/archive?latitude='+CONFIG.LAT+'&longitude='+CONFIG.LON+
+    '&start_date='+minD+'&end_date='+maxD+'&hourly=temperature_2m,precipitation,cloudcover,apparent_temperature,windspeed_10m&timezone=America%2FSao_Paulo';
+   const r=await fetch(url); const j=await r.json();
+   idx={}; const t=j.hourly.time;
+   for(let i=0;i<t.length;i++){idx[t[i]]={temp:j.hourly.temperature_2m[i],precip:j.hourly.precipitation[i],
+     cloud:j.hourly.cloudcover[i],app:j.hourly.apparent_temperature[i],wind:j.hourly.windspeed_10m[i]};}
+   try{localStorage.setItem(cacheKey,JSON.stringify(idx));}catch(e){}
+ }
+ const wx={};
+ for(const row of base){wx[row.date]={};
+   for(const h of HOURS){const key=row.date+'T'+h.padStart(2,'0')+':00';const v=idx[key];
+     if(v&&v.temp!=null)wx[row.date][h]={temp:Math.round(v.temp*10)/10,precip:v.precip||0,cloud:Math.round(v.cloud),
+       app:Math.round(v.app*10)/10,wind:Math.round(v.wind*10)/10,cond:cond(v.precip||0,v.cloud)};
+     else wx[row.date][h]={temp:null,precip:0,cloud:0,app:null,wind:null,cond:'Nublado'};}}
+ return wx;
+}
+
+/* ---------- merge fatores ---------- */
+function merge(base,wx){
+ const F=window.FATORES||{centro:[],feriados:{},copa:{},notas:{}};
+ return base.map(r=>{const y=+r.date.slice(5,7);
+   return {date:r.date,label:(+r.date.slice(8,10))+'/'+r.date.slice(5,7),mes:MES[y],
+     venue:(F.centro||[]).includes(r.date)?'Centro':'Teatro',total:r.total,services:r.services,
+     holiday:(F.feriados||{})[r.date]||'',wc:(F.copa||{})[r.date]||'',note:(F.notas||{})[r.date]||r.obsSheet||'',
+     wx:wx[r.date]||{}};});
+}
+
+/* ---------- stats + render ---------- */
+let DATA=[];
+function mean(a){return a.reduce((x,y)=>x+y,0)/a.length;}
+function corr(xs,ys){const mx=mean(xs),my=mean(ys);let n=0,dx=0,dy=0;
+ for(let i=0;i<xs.length;i++){n+=(xs[i]-mx)*(ys[i]-my);dx+=(xs[i]-mx)**2;dy+=(ys[i]-my)**2;}return n/Math.sqrt(dx*dy);}
+function avgByCond(h){const b={};DATA.forEach(d=>{const s=d.services[h];if(!s)return;const w=d.wx[h];if(!w||w.temp==null)return;(b[grp(w.cond)]=b[grp(w.cond)]||[]).push(s);});const o={};for(const k in b)o[k]=Math.round(mean(b[k]));return o;}
+
+function render(){
+ Chart.defaults.color=C.mut;Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";Chart.defaults.plugins.legend.labels.usePointStyle=true;
+ const totals=DATA.map(d=>d.total),grand=totals.reduce((a,b)=>a+b,0),avg=Math.round(grand/DATA.length);
+ const mx=DATA.reduce((a,b)=>b.total>a.total?b:a),mn=DATA.reduce((a,b)=>b.total<a.total?b:a);
+ const has9=DATA.filter(d=>d.services['9']&&d.wx['9']&&d.wx['9'].temp!=null);
+ const cc=has9.length>2?corr(has9.map(d=>d.wx['9'].temp),has9.map(d=>d.services['9'])):null;
+ document.getElementById('kpis').innerHTML=[
+  [fmt(grand),'Pessoas somadas ('+DATA.length+' domingos)'],[fmt(avg),'Média por domingo'],
+  [fmt(mx.total),'Maior — '+mx.label],[fmt(mn.total),'Menor — '+mn.label],
+  [cc!=null?('+'+cc.toFixed(2)).replace('.',','):'—','Corr. temp.manhã × 9h']
+ ].map(k=>`<div class="kpi"><div class="v">${k[0]}</div><div class="l">${k[1]}</div></div>`).join('');
+
+ const labels=DATA.map(d=>d.label);
+ const pc=m=>DATA.map(d=>m==='holiday'?(d.holiday?C.gold:'#3a4048'):m==='wc'?(d.wc?C.red:'#3a4048'):m==='centro'?(d.venue==='Centro'?C.centro:'#3a4048'):(d.venue==='Centro'?C.centro:C.ember));
+ const pr=m=>DATA.map(d=>m==='all'?5:((m==='holiday'&&d.holiday)||(m==='wc'&&d.wc)||(m==='centro'&&d.venue==='Centro')?7:3));
+ const line=new Chart(lineChart,{type:'line',data:{labels,datasets:[{data:totals,borderColor:C.ember,borderWidth:2.5,tension:.32,fill:true,
+   backgroundColor:x=>{const g=x.chart.ctx.createLinearGradient(0,0,0,340);g.addColorStop(0,'rgba(255,106,43,.28)');g.addColorStop(1,'rgba(255,106,43,0)');return g;},
+   pointBackgroundColor:pc('all'),pointBorderColor:'#0f1113',pointRadius:pr('all'),pointHoverRadius:9}]},
+   options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>'Domingo '+i[0].label,label:i=>'  '+fmt(i.raw)+' pessoas',
+     afterBody:i=>{const d=DATA[i[0].dataIndex],w=d.wx['9']||{};let a=['Local: '+d.venue];if(w.temp!=null)a.push('Manhã 9h: '+ICON[w.cond]+' '+w.cond+' '+w.temp+'° (sente '+w.app+'°, 💨'+w.wind+')');
+       if(d.holiday)a.push('🎉 '+d.holiday);if(d.wc)a.push('⚽ '+d.wc);if(d.note)a.push('📝 '+d.note);return a;}}}},
+   scales:{y:{grid:{color:C.line},ticks:{callback:v=>fmt(v)}},x:{grid:{display:false}}}}});
+ document.querySelectorAll('#lineCtrl .btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('#lineCtrl .btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');line.data.datasets[0].pointBackgroundColor=pc(b.dataset.f);line.data.datasets[0].pointRadius=pr(b.dataset.f);line.update();});
+
+ const g9=avgByCond('9');
+ new Chart(wx9Chart,{type:'bar',data:{labels:['☀️ Sol/Parcial','☁️ Nublado','🌧️ Chuva/Garoa'],datasets:[{data:[g9['Sol/Parcial'],g9['Nublado'],g9['Chuva/Garoa']],backgroundColor:[C.sol,C.nub,C.chuva],borderRadius:8,maxBarThickness:70}]},
+   options:{maintainAspectRatio:false,plugins:{legend:{display:false},title:{display:true,text:'Público médio do culto das 9h',color:C.mut},tooltip:{callbacks:{label:i=>fmt(i.raw)+' pessoas'}}},scales:{y:{beginAtZero:true,grid:{color:C.line}},x:{grid:{display:false}}}}});
+ const sc=has9.map(d=>({x:d.wx['9'].temp,y:d.services['9'],v:d.venue,l:d.label}));
+ new Chart(scatterChart,{type:'scatter',data:{datasets:[{label:'Teatro',data:sc.filter(p=>p.v==='Teatro'),backgroundColor:C.ember,pointRadius:6},{label:'Centro',data:sc.filter(p=>p.v==='Centro'),backgroundColor:C.centro,pointRadius:6}]},
+   options:{maintainAspectRatio:false,plugins:{legend:{position:'top'},title:{display:true,text:'Temperatura às 9h × público das 9h',color:C.mut},tooltip:{callbacks:{label:i=>i.raw.l+': '+i.raw.x+'° → '+fmt(i.raw.y)}}},scales:{y:{grid:{color:C.line}},x:{grid:{color:C.line},title:{display:true,text:'°C às 9h',color:C.mut}}}}});
+ if(g9['Sol/Parcial']&&g9['Nublado']){const dif=g9['Sol/Parcial']-g9['Nublado'];
+   document.getElementById('wxCallout').innerHTML='<b>Leitura:</b> nas manhãs frias/encobertas o culto das 9h reúne ~'+fmt(g9['Nublado'])+' pessoas, contra ~'+fmt(g9['Sol/Parcial'])+' em manhãs de sol (−'+fmt(dif)+'). Os cultos da tarde/noite quase não sentem o clima.';}
+
+ const sens=HOURS.map(h=>avgByCond(h));
+ new Chart(sensChart,{type:'bar',data:{labels:HOURS.map(h=>h+'h'),datasets:[
+   {label:'Sol/Parcial',data:sens.map(s=>s['Sol/Parcial']||null),backgroundColor:C.sol,borderRadius:6},
+   {label:'Nublado',data:sens.map(s=>s['Nublado']||null),backgroundColor:C.nub,borderRadius:6},
+   {label:'Chuva/Garoa',data:sens.map(s=>s['Chuva/Garoa']||null),backgroundColor:C.chuva,borderRadius:6}]},
+   options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>i.dataset.label+': '+fmt(i.raw)}}},scales:{y:{beginAtZero:true,grid:{color:C.line},ticks:{callback:v=>fmt(v)}},x:{grid:{display:false}}}}});
+
+ const tv=DATA.filter(d=>d.venue==='Teatro'),cv=DATA.filter(d=>d.venue==='Centro');
+ const vl=[],vd=[],vcol=[];if(tv.length){vl.push('Teatro ('+tv.length+')');vd.push(Math.round(mean(tv.map(d=>d.total))));vcol.push(C.ember);}
+ if(cv.length){vl.push('Centro ('+cv.length+')');vd.push(Math.round(mean(cv.map(d=>d.total))));vcol.push(C.centro);}
+ new Chart(venueChart,{type:'bar',data:{labels:vl,datasets:[{data:vd,backgroundColor:vcol,borderRadius:8,maxBarThickness:90}]},
+   options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>'Média: '+fmt(i.raw)}}},scales:{y:{beginAtZero:true,grid:{color:C.line},ticks:{callback:v=>fmt(v)}},x:{grid:{display:false}}}}});
+ const hAvg=HOURS.map(h=>{const a=DATA.map(d=>d.services[h]).filter(v=>v);return a.length?Math.round(mean(a)):0;});
+ new Chart(hourChart,{type:'bar',data:{labels:HOURS.map(h=>h+'h'),datasets:[{data:hAvg,backgroundColor:['#ffb98a','#ff6a2b','#ff8a4d','#ffa76b','#c9541f'],borderRadius:8,maxBarThickness:70}]},
+   options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>'Média: '+fmt(i.raw)}}},scales:{y:{beginAtZero:true,grid:{color:C.line}},x:{grid:{display:false}}}}});
+ const hc={'9':'#ffd9b0','11':'#ff6a2b','16':'#ff8a4d','18':'#ffab6e','20':'#b8481a'};
+ new Chart(stackChart,{type:'bar',data:{labels,datasets:HOURS.map(h=>({label:h+'h',data:DATA.map(d=>d.services[h]||0),backgroundColor:hc[h],stack:'s'}))},
+   options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:i=>i.dataset.label+': '+fmt(i.raw)}}},scales:{y:{stacked:true,beginAtZero:true,grid:{color:C.line},ticks:{callback:v=>fmt(v)}},x:{stacked:true,grid:{display:false},ticks:{maxRotation:90,minRotation:45,font:{size:9}}}}}});
+ const mm={};DATA.forEach(d=>{(mm[d.mes]=mm[d.mes]||[]).push(d.total);});
+ const ml=MES.filter(m=>mm[m]);
+ new Chart(monthChart,{type:'bar',data:{labels:ml,datasets:[{data:ml.map(m=>Math.round(mean(mm[m]))),backgroundColor:'#ff6a2b',borderRadius:7,maxBarThickness:46}]},
+   options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:i=>'Média: '+fmt(i.raw)+' ('+mm[i.label].length+' dom.)'}}},scales:{y:{beginAtZero:true,grid:{color:C.line},ticks:{callback:v=>fmt(v)}},x:{grid:{display:false}}}}});
+
+ // heatmap
+ let allv=[];DATA.forEach(d=>HOURS.forEach(h=>{if(d.services[h])allv.push(d.services[h]);}));
+ const lo=Math.min(...allv),hi=Math.max(...allv);
+ const col=v=>{if(v==null)return'background:#141619;color:#3a4048';const t=(v-lo)/(hi-lo||1);return `background:rgb(${Math.round(60+t*195)},${Math.round(40+t*90)},${Math.round(30+t*10)});color:${t>.5?'#1a0f07':'#f2efe9'};font-weight:600`;};
+ let ht='<table class="ht"><thead><tr><th></th>'+DATA.map(d=>'<th>'+d.label+'</th>').join('')+'</tr></thead><tbody>';
+ HOURS.forEach(h=>{ht+='<tr><td class="hlabel">'+h+'h</td>'+DATA.map(d=>{const v=d.services[h],w=d.wx[h];const tt=d.label+' '+h+'h: '+(v?fmt(v):'—')+(w&&w.temp!=null?' | '+ICON[w.cond]+' '+w.cond+' '+w.temp+'°':'');return '<td style="'+col(v)+'" title="'+tt+'">'+(v?fmt(v):'—')+'</td>';}).join('')+'</tr>';});
+ ht+='<tr><td class="hlabel" style="color:var(--ember2)">Total</td>'+DATA.map(d=>'<td style="background:#20242a;color:var(--ember2);font-weight:800">'+fmt(d.total)+'</td>').join('')+'</tr></tbody></table>';
+ document.getElementById('heatmap').innerHTML=ht;
+
+ window._renderTable=function(f){const rows=DATA.filter(d=>f==='holiday'?d.holiday:f==='wc'?d.wc:f==='centro'?d.venue==='Centro':f==='rain'?(d.wx['9']&&['Chuva','Garoa','Nublado'].includes(d.wx['9'].cond)):true);
+  document.getElementById('fbody').innerHTML=rows.map(d=>{const w=d.wx['9']||{};
+   return `<tr><td><b>${d.label}</b><br><span style="color:var(--mut);font-size:11px">${d.mes}</span></td>
+    <td>${d.venue==='Centro'?'<span class="vpill vc">Centro</span>':'<span class="vpill vt">Teatro</span>'}</td>
+    <td class="tnum">${fmt(d.total)}</td><td>${fmt(d.services['9']||0)}</td>
+    <td class="wx">${w.temp!=null?ICON[w.cond]+' '+w.cond+' '+w.temp+'° <span style="color:var(--mut)">(sente '+w.app+'°)</span> · 💨'+w.wind+(w.precip>0?' · '+w.precip+'mm':''):'—'}</td>
+    <td>${d.holiday?'<span class="badge bg-h">🎉 '+d.holiday+'</span>':'—'}</td>
+    <td>${d.wc?'<span class="badge bg-w">⚽ '+d.wc+'</span>':'—'}</td>
+    <td style="color:#cfd4db;max-width:220px">${d.note||''}</td></tr>`;}).join('');};
+ _renderTable('all');
+ document.querySelectorAll('.btn[data-t]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.btn[data-t]').forEach(x=>x.classList.remove('active'));b.classList.add('active');_renderTable(b.dataset.t);});
+
+ // insights (dinâmicos)
+ const ins=[];
+ if(tv.length&&cv.length)ins.push(['🏟️ O local pesa muito','No Teatro a média foi de <span class="em">'+fmt(mean(tv.map(d=>d.total)))+'</span>/domingo; no Centro de Eventos, <span class="em">'+fmt(mean(cv.map(d=>d.total)))+'</span>. Boa parte é capacidade do local.']);
+ if(g9['Sol/Parcial'])ins.push(['🌡️ Frio/nublado esvazia o 9h','9h: sol <span class="em">'+fmt(g9['Sol/Parcial'])+'</span>, chuva <span class="em">'+fmt(g9['Chuva/Garoa']||0)+'</span>, nublado <span class="em">'+fmt(g9['Nublado']||0)+'</span>.'+(cc!=null?' Correlação temp×9h = <span class="em">+'+cc.toFixed(2).replace('.',',')+'</span>.':'')]);
+ const cold=has9.slice().sort((a,b)=>a.wx['9'].app-b.wx['9'].app)[0];
+ if(cold)ins.push(['🥶 Manhã mais gelada','<span class="em">'+cold.label+'</span>: sensação de <span class="em">'+cold.wx['9'].app+'°C</span> às 9h com vento de '+cold.wx['9'].wind+' km/h.']);
+ ins.push(['📈 Maior e menor','Maior: <span class="em">'+mx.label+' ('+fmt(mx.total)+')</span>. Menor: <span class="em">'+mn.label+' ('+fmt(mn.total)+')</span>'+(mn.wc?' — '+mn.wc:'')+'.']);
+ document.getElementById('insights').innerHTML=ins.map(c=>`<div class="ins"><h3>${c[0]}</h3><p>${c[1]}</p></div>`).join('');
+ document.getElementById('foot').innerHTML='Dados: planilha "BC Contagem 2026" (aba GERAL) · clima hora a hora Open-Meteo (ERA5) · fatores em fatores.js. Atualiza automaticamente ao recarregar a página.';
+ document.getElementById('tag').textContent=DATA.length+' domingos · '+DATA[0].label+' a '+DATA[DATA.length-1].label;
+}
+
+async function boot(){
+ try{
+  if(!CONFIG.CSV_URL||CONFIG.CSV_URL==='COLE_AQUI'){status('Falta configurar o link da planilha. Abra o arquivo <b>config.js</b> e cole o link CSV da aba GERAL (veja as instruções no próprio arquivo).',true);return;}
+  status('Lendo a planilha…');
+  const r=await fetch(CONFIG.CSV_URL);
+  if(!r.ok)throw new Error('planilha não acessível (HTTP '+r.status+')');
+  const text=await r.text();
+  const base=buildFromCSV(text);
+  if(!base.length)throw new Error('nenhuma linha de '+CONFIG.ANO+' encontrada na aba GERAL. Confira se publicou a aba certa.');
+  status('Buscando o clima…');
+  const wx=await loadWeather(base);
+  DATA=merge(base,wx);
+  document.getElementById('status').style.display='none';
+  document.getElementById('app').style.display='block';
+  render();
+ }catch(e){status('Não consegui carregar: '+e.message+'. Confira o link em config.js e se a planilha está publicada como CSV.',true);}
+}
+boot();
+</script>
+</body>
+</html>
